@@ -51,7 +51,7 @@ public class Utility {
             User user = session.getReference(User.class, id);
 
             if(user != null) {
-                System.out.println("User: " + user);
+                System.out.println("Name: " + user.getName() + "\nEmail: " + user.getEmail() + "\nAge: " + user.getAge());
             } else {
                 System.out.println("Failed to read user");
             }
