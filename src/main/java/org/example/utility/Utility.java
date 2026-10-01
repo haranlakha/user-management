@@ -22,12 +22,7 @@ public class Utility {
         return sessionFactory;
     }
 
-    public static void shutdown() {
-        getSessionFactory().close();
-    }
-
-
-    //createUser method
+    //creates new user in database
     public static void createUser(User user) {
 
         Session session = getSessionFactory().openSession();
@@ -35,9 +30,7 @@ public class Utility {
 
         try {
             transaction = session.beginTransaction();
-
             session.persist(user);
-
             transaction.commit();
         } catch (Exception sessionFactoryException) {
             if(transaction != null) {
@@ -49,11 +42,14 @@ public class Utility {
         }
     }
 
+    //reads user from database
     public static void readUser(int id) {
+
         Session session = getSessionFactory().openSession();
 
         try {
             User user = session.getReference(User.class, id);
+
             if(user != null) {
                 System.out.println("User: " + user);
             } else {
@@ -64,32 +60,28 @@ public class Utility {
         } finally {
             session.close();
         }
-
     }
 
+    //updates user details in database
     public static void updateUser(int id, String newName, String newEmail) {
+
         Session session = getSessionFactory().openSession();
         Transaction transaction = null;
 
         try {
-
             User updateUser = session.getReference(User.class, id);
 
             if(updateUser != null) {
                 transaction = session.beginTransaction();
-
                 updateUser.setName(newName);
                 updateUser.setEmail(newEmail);
-
                 session.merge(updateUser);
-
                 transaction.commit();
             } else  {
                 System.out.println("Failed to update user");
             }
 
         } catch (Exception sessionFactoryException) {
-
             if(transaction != null) {
                 transaction.rollback();
             }
@@ -97,26 +89,24 @@ public class Utility {
         } finally {
             session.close();
         }
-
     }
 
+    //deletes user from database
     public static void deleteUser(int id) {
 
         Session session = getSessionFactory().openSession();
-
         Transaction transaction = null;
 
         try {
-
             User deleteUser = session.getReference(User.class, id);
 
             if(deleteUser != null) {
                 transaction = session.beginTransaction();
-                session.detach(deleteUser);
+                session.remove(deleteUser);
+                transaction.commit();
             }
 
         } catch (Exception sessionFactoryException) {
-
             if(transaction != null) {
                 transaction.rollback();
             }
