@@ -51,4 +51,10 @@ Run the application in your IDE:
 
 
 
+##Visualiser
+
+[![Architecture diagram of haranlakha/user-management](https://gitdiagram.com/haranlakha/user-management/diagram.png)](https://gitdiagram.com/haranlakha/user-management?utm_source=readme&utm_medium=picture)
+
+
+
 
