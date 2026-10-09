@@ -1,7 +1,5 @@
 package org.example.main;
 
-
-
 import org.example.entity.User;
 import org.example.utility.Utility;
 
@@ -17,17 +15,19 @@ public class Main {
         User newUser =  new User();
         Scanner scnr = new Scanner(System.in);
 
-
-        System.out.println("Enter user name: ");
+        System.out.println("Enter your name: ");
         name = scnr.nextLine();
-        newUser.setName(name);
 
-        System.out.println("Enter user email: ");
+        System.out.println("Enter your email: ");
         email = scnr.nextLine();
-        newUser.setEmail(email);
 
-        System.out.println("Enter age:");
+        System.out.println("Enter your age: ");
         age = scnr.nextInt();
+
+        scnr.close();
+
+        newUser.setName(name);
+        newUser.setEmail(email);
         newUser.setAge(age);
 
         Utility.createUser(newUser);
