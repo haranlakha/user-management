@@ -1,6 +1,7 @@
 package org.example.entity;
 
 import jakarta.persistence.*;
+import org.example.encryption.EncryptionConverter;
 
 @Entity
 @Table(name="users")
@@ -9,8 +10,14 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Convert(converter = EncryptionConverter.class)
     private String name;
+
+    @Convert(converter = EncryptionConverter.class)
     private String email;
+
+    @Convert(converter = EncryptionConverter.class)
     private int age;
 
 
