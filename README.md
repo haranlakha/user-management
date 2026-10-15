@@ -56,5 +56,9 @@ Run the application in your IDE:
 [![Architecture diagram of haranlakha/user-management](https://gitdiagram.com/haranlakha/user-management/diagram.png)](https://gitdiagram.com/haranlakha/user-management?utm_source=readme&utm_medium=picture)
 
 
+<img width="4753" height="7401" alt="diagram" src="https://github.com/user-attachments/assets/3e02b536-71f6-47c0-b2af-337b34a977ac" />
+
+
+
 
 
