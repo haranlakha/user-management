@@ -4,6 +4,8 @@ import org.hibernate.*;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.example.entity.*;
+import java.util.List;
+import java.util.Collections;
 
 
 public class Utility {
@@ -18,8 +20,22 @@ public class Utility {
         }
     }
 
+    // reads all users from database
     public static SessionFactory getSessionFactory() {
         return sessionFactory;
+    }
+
+
+    public static List<User> getAllUsers() {
+        Session session = getSessionFactory().openSession();
+        try {
+            return session.createQuery("from User", User.class).list();
+        } catch (Exception e) {
+            System.err.println("getAllUsers: sessionFactoryException: " + e.getMessage());
+            return Collections.emptyList();
+        } finally {
+            session.close();
+        }
     }
 
     //creates new user in database

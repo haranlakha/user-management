@@ -38,3 +38,8 @@ build/
 ### Mac OS ###
 .DS_Store!/src/main/resources/hibernate.cfg.xml
 !/src/main/resources/postgresql.conf
+
+### Frontend ###
+frontend/node_modules/
+frontend/dist/
+
