@@ -131,11 +131,11 @@ export default function LoginScreen({ onLogin, onRegister, useMock }) {
           <div className="login-icon-box">
             {isRegisterMode ? <UserPlus size={28} /> : <Shield size={28} />}
           </div>
-          <h2>{isRegisterMode ? 'Create New Account' : 'Secure Portal Login'}</h2>
+          <h2>{isRegisterMode ? 'Create New Account' : 'Library Portal Login'}</h2>
           <p className="login-subtitle">
             {isRegisterMode
-              ? 'New users and admins are encrypted at rest with AES-128'
-              : 'PostgreSQL AES-128 Encrypted Database'}
+              ? 'Create a new user'
+              : 'Login to Library Management System'}
           </p>
         </div>
 
