@@ -38,6 +38,64 @@ public class Utility {
         }
     }
 
+    // Authenticate Admin by username and password
+    public static Admin authenticateAdmin(String username, String password) {
+        Session session = getSessionFactory().openSession();
+        try {
+            ensureDefaultAdmin(session);
+            return session.createQuery(
+                "FROM Admin WHERE username = :username AND password = :password", Admin.class)
+                    .setParameter("username", username)
+                    .setParameter("password", password)
+                    .uniqueResult();
+        } catch (Exception e) {
+            System.err.println("authenticateAdmin error: " + e.getMessage());
+            return null;
+        } finally {
+            session.close();
+        }
+    }
+
+    // Authenticate Standard User by email or name (scans decrypted entity attributes)
+    public static User authenticateUser(String emailOrName) {
+        Session session = getSessionFactory().openSession();
+        try {
+            List<User> users = session.createQuery("FROM User", User.class).list();
+            for (User u : users) {
+                if (u.getEmail() != null && u.getEmail().equalsIgnoreCase(emailOrName.trim())) {
+                    return u;
+                }
+                if (u.getName() != null && u.getName().equalsIgnoreCase(emailOrName.trim())) {
+                    return u;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("authenticateUser error: " + e.getMessage());
+            return null;
+        } finally {
+            session.close();
+        }
+    }
+
+    // Creates default admin if none exists
+    private static void ensureDefaultAdmin(Session session) {
+        try {
+            Long count = session.createQuery("SELECT COUNT(a) FROM Admin a", Long.class).uniqueResult();
+            if (count == null || count == 0) {
+                Transaction tx = session.beginTransaction();
+                Admin defaultAdmin = new Admin();
+                defaultAdmin.setUsername("admin");
+                defaultAdmin.setPassword("admin123");
+                session.persist(defaultAdmin);
+                tx.commit();
+                System.out.println(">> Seeded default admin account: username='admin', password='admin123'");
+            }
+        } catch (Exception e) {
+            System.err.println("ensureDefaultAdmin error: " + e.getMessage());
+        }
+    }
+
     //creates new user in database
     public static void createUser(User user) {
 
