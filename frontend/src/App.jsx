@@ -17,7 +17,7 @@ export default function App() {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [useMock, setUseMock] = useState(true);
+  const [useMock, setUseMock] = useState(false); // Default to live PostgreSQL database
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
@@ -33,6 +33,15 @@ export default function App() {
     setAuth(result);
     localStorage.setItem('auth_session', JSON.stringify(result));
     showToast(`Welcome! Logged in as ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`);
+  };
+
+  const handleRegister = async (registerData) => {
+    const result = await userService.register(registerData, useMock);
+    setAuth(result);
+    localStorage.setItem('auth_session', JSON.stringify(result));
+    showToast(
+      `Account created! Welcome, ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`
+    );
   };
 
   const handleLogout = () => {
@@ -106,7 +115,7 @@ export default function App() {
 
   // 1. Not Logged In -> Show Login Screen
   if (!auth) {
-    return <LoginScreen onLogin={handleLogin} useMock={useMock} />;
+    return <LoginScreen onLogin={handleLogin} onRegister={handleRegister} useMock={useMock} />;
   }
 
   // 2. Standard User -> Show New User Portal Page
