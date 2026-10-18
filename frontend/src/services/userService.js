@@ -121,4 +121,42 @@ export const userService = {
       return this.deleteUser(id, true);
     }
   },
+
+  async login(usernameOrEmail, password, roleHint = 'ADMIN', useMock = false) {
+    if (useMock) {
+      if (roleHint === 'ADMIN' || usernameOrEmail.toLowerCase() === 'admin') {
+        if (password === 'admin123' || !password) {
+          return { success: true, role: 'ADMIN', user: { id: 1, username: 'admin' } };
+        }
+        throw new Error('Invalid Admin password. Use "admin123".');
+      }
+
+      const users = getStoredMockUsers();
+      const match = users.find(
+        (u) =>
+          u.email.toLowerCase() === usernameOrEmail.toLowerCase() ||
+          u.name.toLowerCase() === usernameOrEmail.toLowerCase()
+      );
+      if (match) {
+        return { success: true, role: 'USER', user: match };
+      }
+      throw new Error(`No user found matching "${usernameOrEmail}". Try "alice.johnson@example.com".`);
+    }
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usernameOrEmail, password }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Login failed');
+      }
+      return data;
+    } catch (err) {
+      console.warn('Backend /api/auth/login unreachable, trying mock login:', err.message);
+      return this.login(usernameOrEmail, password, roleHint, true);
+    }
+  },
 };

@@ -4,13 +4,20 @@ import StatsCards from './components/StatsCards';
 import UserTable from './components/UserTable';
 import UserModal from './components/UserModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
-import { UserPlus, Shield, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import LoginScreen from './components/LoginScreen';
+import UserPortal from './components/UserPortal';
+import { UserPlus, Shield, RefreshCw, CheckCircle, AlertCircle, LogOut, ShieldAlert } from 'lucide-react';
 import './App.css';
 
 export default function App() {
+  const [auth, setAuth] = useState(() => {
+    const saved = localStorage.getItem('auth_session');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [useMock, setUseMock] = useState(true); // Default to mock so it works out of the box
+  const [loading, setLoading] = useState(false);
+  const [useMock, setUseMock] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
@@ -18,12 +25,24 @@ export default function App() {
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3500);
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleLogin = async ({ usernameOrEmail, password, roleHint }) => {
+    const result = await userService.login(usernameOrEmail, password, roleHint, useMock);
+    setAuth(result);
+    localStorage.setItem('auth_session', JSON.stringify(result));
+    showToast(`Welcome! Logged in as ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`);
+  };
+
+  const handleLogout = () => {
+    setAuth(null);
+    localStorage.removeItem('auth_session');
+    showToast('You have been logged out.');
   };
 
   const loadUsers = async () => {
+    if (!auth || auth.role !== 'ADMIN') return;
     setLoading(true);
     try {
       const data = await userService.getAllUsers(useMock);
@@ -36,28 +55,18 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadUsers();
-  }, [useMock]);
+    if (auth && auth.role === 'ADMIN') {
+      loadUsers();
+    }
+  }, [auth, useMock]);
 
   const handleToggleMock = () => {
     const nextMock = !useMock;
     setUseMock(nextMock);
     showToast(
-      nextMock
-        ? 'Switched to Local Demo Mode'
-        : 'Switched to Live Backend Mode (/api/users)',
+      nextMock ? 'Switched to Local Demo Mode' : 'Switched to Live Backend Mode (/api/users)',
       'info'
     );
-  };
-
-  const handleOpenAddModal = () => {
-    setEditingUser(null);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (user) => {
-    setEditingUser(user);
-    setIsModalOpen(true);
   };
 
   const handleModalSubmit = async (formData) => {
@@ -88,21 +97,34 @@ export default function App() {
     }
   };
 
+  const handleUpdateSelf = async (updatedUser) => {
+    await userService.updateUser(updatedUser.id, updatedUser, useMock);
+    const newAuth = { ...auth, user: updatedUser };
+    setAuth(newAuth);
+    localStorage.setItem('auth_session', JSON.stringify(newAuth));
+  };
+
+  // 1. Not Logged In -> Show Login Screen
+  if (!auth) {
+    return <LoginScreen onLogin={handleLogin} useMock={useMock} />;
+  }
+
+  // 2. Standard User -> Show New User Portal Page
+  if (auth.role === 'USER') {
+    return <UserPortal user={auth.user} onLogout={handleLogout} onUpdateSelf={handleUpdateSelf} />;
+  }
+
+  // 3. Admin User -> Show Existing User Management Page
   return (
     <div className="app-layout">
-      {/* Toast Notification */}
       {toast && (
         <div className={`toast-notification ${toast.type}`}>
-          {toast.type === 'error' ? (
-            <AlertCircle size={18} />
-          ) : (
-            <CheckCircle size={18} />
-          )}
+          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle size={18} />}
           <span>{toast.message}</span>
         </div>
       )}
 
-      {/* Navigation Header */}
+      {/* Header with Admin Badge & Logout */}
       <header className="app-header">
         <div className="header-container">
           <div className="brand-group">
@@ -110,53 +132,59 @@ export default function App() {
               <Shield size={24} />
             </div>
             <div>
-              <div className="brand-title">User Management System</div>
-              <div className="brand-subtitle">
-                Hibernate JPA Entity Manager with AES-128 Column Encryption
-              </div>
+              <div className="brand-title">SecureUser DB (Admin)</div>
+              <div className="brand-subtitle">Hibernate JPA Entity Manager with AES-128 Column Encryption</div>
             </div>
           </div>
 
           <div className="header-actions">
-            <button
-              className="btn-refresh"
-              onClick={loadUsers}
-              title="Refresh list"
-              disabled={loading}
-            >
+            <span className="admin-status-pill">
+              <ShieldAlert size={14} /> Admin: {auth.user?.username || 'admin'}
+            </span>
+
+            <button className="btn-refresh" onClick={loadUsers} title="Refresh list" disabled={loading}>
               <RefreshCw size={16} className={loading ? 'spin' : ''} />
               <span>Refresh</span>
             </button>
 
-            <button className="btn-primary" onClick={handleOpenAddModal}>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setEditingUser(null);
+                setIsModalOpen(true);
+              }}
+            >
               <UserPlus size={18} />
               <span>Add User</span>
+            </button>
+
+            <button className="btn-secondary btn-logout" onClick={handleLogout} title="Log out">
+              <LogOut size={16} />
+              <span>Log Out</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Existing Admin Dashboard Content */}
       <main className="main-content">
         <div className="content-container">
-          {/* Key Stat Cards */}
-          <StatsCards
-            users={users}
-            useMock={useMock}
-            onToggleMock={handleToggleMock}
-          />
-
-          {/* User Table & Toolbar */}
+          <StatsCards users={users} useMock={useMock} onToggleMock={handleToggleMock} />
           <UserTable
             users={users}
-            onEdit={handleOpenEditModal}
+            onEdit={(user) => {
+              setEditingUser(user);
+              setIsModalOpen(true);
+            }}
             onDelete={(user) => setDeletingUser(user)}
-            onOpenAddModal={handleOpenAddModal}
+            onOpenAddModal={() => {
+              setEditingUser(null);
+              setIsModalOpen(true);
+            }}
           />
         </div>
       </main>
 
-      {/* Add / Edit Modal */}
       <UserModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -167,7 +195,6 @@ export default function App() {
         initialUser={editingUser}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={!!deletingUser}
         onClose={() => setDeletingUser(null)}
