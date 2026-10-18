@@ -20,6 +20,9 @@ public class User {
     @Convert(converter = EncryptionConverter.class)
     private int age;
 
+    @Convert(converter = EncryptionConverter.class)
+    private String password;
+
 
     public int getId() {
         return id;
@@ -51,5 +54,13 @@ public class User {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

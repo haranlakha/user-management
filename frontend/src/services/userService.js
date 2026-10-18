@@ -155,8 +155,62 @@ export const userService = {
       }
       return data;
     } catch (err) {
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch')) {
+        throw err; // Real backend validation error
+      }
       console.warn('Backend /api/auth/login unreachable, trying mock login:', err.message);
       return this.login(usernameOrEmail, password, roleHint, true);
+    }
+  },
+
+  async register(registerData, useMock = false) {
+    if (useMock) {
+      if (registerData.password !== registerData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      if (registerData.role === 'ADMIN') {
+        return {
+          success: true,
+          role: 'ADMIN',
+          user: { id: Date.now(), username: registerData.username },
+        };
+      }
+
+      // Standard user mock registration
+      const users = getStoredMockUsers();
+      if (users.some((u) => u.email.toLowerCase() === registerData.email.toLowerCase())) {
+        throw new Error('Email is already registered in mock storage');
+      }
+
+      const newUser = {
+        id: users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1,
+        name: registerData.name,
+        email: registerData.email,
+        age: Number(registerData.age),
+        password: registerData.password,
+      };
+      saveStoredMockUsers([...users, newUser]);
+      return { success: true, role: 'USER', user: newUser };
+    }
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Registration failed');
+      }
+      return data;
+    } catch (err) {
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch')) {
+        throw err; // Real backend error from Spring Boot (e.g., username taken, duplicate email)
+      }
+      console.warn('Backend unavailable, falling back to mock registration:', err.message);
+      return this.register(registerData, true);
     }
   },
 };

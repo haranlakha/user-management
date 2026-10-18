@@ -56,23 +56,84 @@ public class Utility {
         }
     }
 
-    // Authenticate Standard User by email or name (scans decrypted entity attributes)
-    public static User authenticateUser(String emailOrName) {
+    // Authenticate Standard User by email or name AND password (scans decrypted entity attributes)
+    public static User authenticateUser(String emailOrName, String password) {
         Session session = getSessionFactory().openSession();
         try {
             List<User> users = session.createQuery("FROM User", User.class).list();
             for (User u : users) {
-                if (u.getEmail() != null && u.getEmail().equalsIgnoreCase(emailOrName.trim())) {
-                    return u;
-                }
-                if (u.getName() != null && u.getName().equalsIgnoreCase(emailOrName.trim())) {
-                    return u;
+                boolean matchesIdentifier = (u.getEmail() != null && u.getEmail().equalsIgnoreCase(emailOrName.trim()))
+                        || (u.getName() != null && u.getName().equalsIgnoreCase(emailOrName.trim()));
+
+                if (matchesIdentifier) {
+                    // If user has a password configured, ensure it matches
+                    if (u.getPassword() != null && !u.getPassword().isEmpty()) {
+                        if (password != null && u.getPassword().equals(password)) {
+                            return u;
+                        }
+                    } else {
+                        // User without password (legacy records)
+                        return u;
+                    }
                 }
             }
             return null;
         } catch (Exception e) {
             System.err.println("authenticateUser error: " + e.getMessage());
             return null;
+        } finally {
+            session.close();
+        }
+    }
+
+    // Creates new admin in database
+    public static void createAdmin(Admin admin) {
+        Session session = getSessionFactory().openSession();
+        Transaction transaction = null;
+        try {
+            transaction = session.beginTransaction();
+            session.persist(admin);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            System.err.println("createAdmin error: " + e.getMessage());
+            throw new RuntimeException("Failed to create admin: " + e.getMessage(), e);
+        } finally {
+            session.close();
+        }
+    }
+
+    // Check if an admin username is already registered
+    public static boolean isAdminUsernameTaken(String username) {
+        Session session = getSessionFactory().openSession();
+        try {
+            Long count = session.createQuery(
+                "SELECT COUNT(a) FROM Admin a WHERE LOWER(a.username) = LOWER(:username)", Long.class)
+                    .setParameter("username", username.trim())
+                    .uniqueResult();
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            session.close();
+        }
+    }
+
+    // Check if a standard user email is already registered
+    public static boolean isUserEmailTaken(String email) {
+        Session session = getSessionFactory().openSession();
+        try {
+            List<User> users = session.createQuery("FROM User", User.class).list();
+            for (User u : users) {
+                if (u.getEmail() != null && u.getEmail().equalsIgnoreCase(email.trim())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
         } finally {
             session.close();
         }
