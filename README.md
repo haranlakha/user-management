@@ -1,6 +1,20 @@
 # User Management
 
-User Management application, utilising [Hibernate](https://hibernate.org/orm/) and [PostgreSQL](https://www.postgresql.org/).
+User Management application for a Library Management System, utilising [Spring Boot](https://spring.io/projects/spring-boot), [Hibernate](https://hibernate.org/orm/), [PostgreSQL](https://www.postgresql.org/) and a [React](https://react.dev/) + [Vite](https://vite.dev/) frontend.
+
+## Features
+
+- Sign in and create accounts from the Library Portal
+- Separate **Standard User** (email) and **Admin** (username) roles
+- Passwords encrypted at rest with AES via a JPA `@Convert` attribute converter
+- REST API under `/api/auth` (`/login`, `/register`) for the frontend
+
+## Prerequisites
+
+- Java 21
+- Maven
+- PostgreSQL
+- Node.js and npm (for the frontend)
 
 ## Setup
 
@@ -24,8 +38,22 @@ Example XML file:
         <property name="hibernate.hbm2ddl.auto">update</property>
         <property name="hibernate.show_sql">true</property>
         <mapping class="org.example.entity.User" />
+        <mapping class="org.example.entity.Admin" />
     </session-factory>
 </hibernate-configuration>
+```
+
+You will also need a postgresql.conf file in the same 'resources' folder, containing the key used to encrypt passwords. It must be exactly 16 characters long (AES-128):
+
+```
+encryption.key=your16charactkey
+```
+
+Install the frontend dependencies:
+
+```
+cd frontend
+npm install
 ```
 
 
@@ -37,18 +65,33 @@ git clone https://github.com/haranlakha/user-management.git
 
 ## Compile code
 
-Build the application in your favourite IDE e.g. [IntelliJ IDEA](https://www.jetbrains.com/idea/).
+Build the backend with Maven from the project root:
+
+```
+mvn clean compile
+```
+
+Or build it in your favourite IDE e.g. [IntelliJ IDEA](https://www.jetbrains.com/idea/) (Build > Build Project).
 
 ## Run code
 
-Run the application in your IDE:
+Run `org.example.Application` from your IDE, with the project root as the working directory.
 
-<img width="178" height="124" alt="image" src="https://github.com/user-attachments/assets/75704b62-b64c-42e4-a5ff-8e758063af60" />
+This starts:
 
+- the Spring Boot backend on [http://localhost:8080](http://localhost:8080)
+- the React frontend dev server (`npm run dev` in the `frontend` folder) on [http://localhost:3000](http://localhost:3000), unless it is already running
 
-<br>
-<img width="513" height="65" alt="image" src="https://github.com/user-attachments/assets/58176eeb-2da1-442c-b76b-fbeea04de198" />
+The frontend server is stopped automatically when the application shuts down. To run the frontend on its own instead:
 
+```
+cd frontend
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to reach the Library Portal login page:
+
+<img width="495" alt="Library Portal Login screen" src="docs/images/login.png" />
 
 
 ## Visualiser
