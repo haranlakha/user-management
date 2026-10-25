@@ -188,7 +188,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                                 <input
                                     id="username"
                                     type="text"
-                                    placeholder="e.g. admin"
+                                    placeholder="e.g. test.admin@example.com"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     autoFocus
@@ -208,7 +208,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                                     <input
                                         id="name"
                                         type="text"
-                                        placeholder="e.g. John Doe"
+                                        placeholder="e.g. Test User"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         required
@@ -223,7 +223,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                                     <input
                                         id="email"
                                         type="email"
-                                        placeholder="e.g. john@example.com"
+                                        placeholder="e.g. test.user@example.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
@@ -238,7 +238,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                                     type="number"
                                     min="1"
                                     max="130"
-                                    placeholder="e.g. 29"
+                                    placeholder="e.g. 30"
                                     value={age}
                                     onChange={(e) => setAge(e.target.value)}
                                     required
@@ -256,7 +256,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                                 <input
                                     id="loginEmail"
                                     type="email"
-                                    placeholder="e.g. alice.johnson@example.com"
+                                    placeholder="e.g. test.user@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     autoFocus
