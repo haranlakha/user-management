@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import org.example.encryption.EncryptionConverter;
 
 @Entity
-@Table(name="users")
+@Table(name = "users")
 public class User {
 
     @Id

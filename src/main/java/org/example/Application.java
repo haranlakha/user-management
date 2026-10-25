@@ -18,7 +18,7 @@ public class Application {
     }
 
     private static void startFrontendServer() {
-        if(!isPortAvailable(3000)) {
+        if (!isPortAvailable(3000)) {
             System.out.println("Frontend Server already running on port 3000");
             return;
         }
@@ -62,7 +62,7 @@ public class Application {
     }
 
     private static Boolean isPortAvailable(int port) {
-        try (Socket socket = new Socket("localhost", port)){
+        try (Socket socket = new Socket("localhost", port)) {
             return false;
         } catch (IOException e) {
             return true;
