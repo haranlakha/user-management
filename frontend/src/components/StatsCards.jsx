@@ -38,8 +38,8 @@ export default function StatsCards({users, useMock, onToggleMock}) {
                 </div>
                 <div className="stat-content">
                     <div className="stat-label">DB Encryption</div>
-                    <div className="stat-value">AES-128</div>
-                    <div className="stat-hint">Key loaded from postgres.conf</div>
+                    <div className="stat-value">AES-256-GCM</div>
+                    <div className="stat-hint">Key loaded from postgresql.conf</div>
                 </div>
             </div>
 

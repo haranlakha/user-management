@@ -75,7 +75,7 @@ export default function UserModal({isOpen, onClose, onSubmit, initialUser = null
 
                 <div className="encryption-banner">
                     <ShieldCheck size={16}/>
-                    <span>Fields will be encrypted with AES-128 before persisting to DB.</span>
+                    <span>Fields will be encrypted with AES-256-GCM before persisting to DB.</span>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">
