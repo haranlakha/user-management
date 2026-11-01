@@ -36,8 +36,11 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store!/src/main/resources/hibernate.cfg.xml
-!/src/main/resources/postgresql.conf
+.DS_Store
+
+### Local config (contains secrets, see *.example files) ###
+/src/main/resources/hibernate.cfg.xml
+/src/main/resources/postgresql.conf
 
 ### Frontend ###
 frontend/node_modules/

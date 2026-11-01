@@ -19,7 +19,16 @@ User Management application for a Library Management System, utilising [Spring B
 
 ## Setup
 
-You will need to create a hibernate.cfg.xml file. This will be stored in the 'resources' folder:
+Two config files in `src/main/resources` hold secrets and are git-ignored. Create them from the committed examples, then fill in your own values:
+
+```
+cp src/main/resources/hibernate.cfg.xml.example src/main/resources/hibernate.cfg.xml
+cp src/main/resources/postgresql.conf.example src/main/resources/postgresql.conf
+```
+
+Never commit the real files.
+
+The hibernate.cfg.xml file is stored in the 'resources' folder:
 
 <img width="346" height="41" alt="image" src="https://github.com/user-attachments/assets/75cf506e-1c75-4234-bc2e-1cbf430e1f87" />
 
@@ -44,7 +53,7 @@ Example XML file:
 </hibernate-configuration>
 ```
 
-You will also need a postgresql.conf file in the same 'resources' folder, containing the secret used to encrypt user details. The salt must be hex-encoded (e.g. 16 hex characters):
+The postgresql.conf file contains the secret used to encrypt user details. Use your own random values; the salt must be hex-encoded (e.g. 16 hex characters):
 
 ```
 encryption.password=any-long-secret-phrase

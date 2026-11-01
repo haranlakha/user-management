@@ -1,5 +1,6 @@
 package org.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import org.example.encryption.EncryptionConverter;
 
@@ -23,6 +24,7 @@ public class User {
     private int age;
 
     // BCrypt hash, set by Utility
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
 

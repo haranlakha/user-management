@@ -2,12 +2,13 @@
         "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
         " http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 
+<!-- Copy to hibernate.cfg.xml and fill in your database details. hibernate.cfg.xml is git-ignored. -->
 <hibernate-configuration>
     <session-factory>
         <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
-        <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/postgres</property>
-        <property name="hibernate.connection.username">postgres</property>
-        <property name="hibernate.connection.password">300797hl</property>
+        <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/db_name</property>
+        <property name="hibernate.connection.username">username</property>
+        <property name="hibernate.connection.password">password</property>
         <property name="hibernate.hbm2ddl.auto">update</property>
         <property name="hibernate.show_sql">true</property>
         <mapping class="org.example.entity.User" />
