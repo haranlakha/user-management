@@ -10,10 +10,14 @@ import {UserPlus, Shield, RefreshCw, CheckCircle, AlertCircle, LogOut, ShieldAle
 import './App.css';
 
 export default function App() {
-    const [auth, setAuth] = useState(() => {
-        const saved = localStorage.getItem('auth_session');
-        return saved ? JSON.parse(saved) : null;
-    });
+
+    const [auth, setAuth] = useState(null);
+    const [checkingSession, setCheckingSession] = useState(true);
+
+    useEffect(() => {
+        localStorage.removeItem('auth_session');
+        userService.init().then(setAuth).catch(() => setAuth(null)).finally(() => setCheckingSession(false));
+    }, []);
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -31,22 +35,20 @@ export default function App() {
     const handleLogin = async ({usernameOrEmail, password, roleHint}) => {
         const result = await userService.login(usernameOrEmail, password, roleHint, useMock);
         setAuth(result);
-        localStorage.setItem('auth_session', JSON.stringify(result));
         showToast(`Welcome! Logged in as ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`);
     };
 
     const handleRegister = async (registerData) => {
         const result = await userService.register(registerData, useMock);
         setAuth(result);
-        localStorage.setItem('auth_session', JSON.stringify(result));
         showToast(
             `Account created! Welcome, ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`
         );
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await userService.logout();
         setAuth(null);
-        localStorage.removeItem('auth_session');
         showToast('You have been logged out.');
     };
 
@@ -65,7 +67,8 @@ export default function App() {
 
     useEffect(() => {
         if (auth && auth.role === 'ADMIN') {
-            loadUsers();
+            loadUsers().then(() => {
+            });
         }
     }, [auth, useMock]);
 
@@ -89,7 +92,7 @@ export default function App() {
             }
             setIsModalOpen(false);
             setEditingUser(null);
-            loadUsers();
+            await loadUsers();
         } catch (err) {
             showToast('Failed to save user: ' + err.message, 'error');
         }
@@ -100,7 +103,7 @@ export default function App() {
             await userService.deleteUser(id, useMock);
             showToast('Deleted user');
             setDeletingUser(null);
-            loadUsers();
+            await loadUsers();
         } catch (err) {
             showToast('Failed to delete user: ' + err.message, 'error');
         }
@@ -110,8 +113,11 @@ export default function App() {
         await userService.updateUser(updatedUser.id, updatedUser, useMock);
         const newAuth = {...auth, user: updatedUser};
         setAuth(newAuth);
-        localStorage.setItem('auth_session', JSON.stringify(newAuth));
     };
+
+    if (checkingSession) {
+        return null;
+    }
 
     // 1. Not Logged In -> Show Login Screen
     if (!auth) {
