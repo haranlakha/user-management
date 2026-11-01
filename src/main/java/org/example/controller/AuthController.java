@@ -1,15 +1,33 @@
 package org.example.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.example.dto.LoginRequest;
 import org.example.dto.RegisterRequest;
 import org.example.entity.Admin;
 import org.example.entity.User;
+import org.example.security.SessionUser;
 import org.example.utility.Utility;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.core.Authentication;
+
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,9 +35,11 @@ import java.util.Map;
 public class AuthController {
 
     private static final int MIN_PASSWORD_LENGTH = 8;
+    private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request,
+                                   HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String identifier = request.getUsernameOrEmail() != null ? request.getUsernameOrEmail().trim() : "";
         // Passwords are used exactly as typed, spaces included
         String password = request.getPassword() != null ? request.getPassword() : "";
@@ -28,6 +48,8 @@ public class AuthController {
         if (!password.isEmpty()) {
             Admin admin = Utility.authenticateAdmin(identifier, password);
             if (admin != null) {
+
+                startSession(new SessionUser(admin.getId(), "ADMIN"), httpServletRequest, httpServletResponse);
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("role", "ADMIN");
@@ -39,6 +61,7 @@ public class AuthController {
         // 2. Try Standard User authentication with password
         User user = Utility.authenticateUser(identifier, password);
         if (user != null) {
+            startSession(new SessionUser(user.getId(), "USER"), httpServletRequest, httpServletResponse);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("role", "USER");
@@ -54,7 +77,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request,
+                                      HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         Map<String, Object> response = new HashMap<>();
 
         // Admin accounts can't be self-registered; the default admin comes from postgresql.conf
@@ -106,9 +130,51 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
 
+        startSession(new SessionUser(newUser.getId(), "USER"), httpServletRequest, httpServletResponse);
+
         response.put("success", true);
         response.put("role", "USER");
         response.put("user", newUser);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/csrf")
+    public CsrfToken getCsrfToken(CsrfToken csrfToken) {
+        return csrfToken;
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal SessionUser sessionUser) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("role", sessionUser.getRole());
+
+        if (sessionUser.isAdmin()) {
+            Admin admin = Utility.findAdmin(sessionUser.getId());
+            response.put("user", Map.of("id", admin.getId(), "username", admin.getUsername()));
+        } else {
+            response.put("user", Utility.findUser(sessionUser.getId()));
+        }
+
+        return ResponseEntity.ok(response);
+
+    }
+
+
+    private void startSession(SessionUser sessionUser, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        HttpSession oldSession = httpServletRequest.getSession(false);
+
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
+
+        Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(sessionUser, null, List.of(new SimpleGrantedAuthority("ROLE_" + sessionUser.getRole())));
+
+        SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+
+        securityContext.setAuthentication(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+        securityContextRepository.saveContext(securityContext, httpServletRequest, httpServletResponse);
     }
 }

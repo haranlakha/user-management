@@ -4,13 +4,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 
-// Exclude default DataSource auto-configuration since Utility uses its own hibernate.cfg.xml
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
+// Exclude default DataSource autoconfiguration since Utility uses its own hibernate.cfg.xml
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 public class Application {
     public static void main(String[] args) {
         startFrontendServer();
