@@ -274,4 +274,16 @@ public class Utility {
             session.close();
         }
     }
+
+    public static User findUser(int id) {
+        try(Session session = getSessionFactory().openSession()) {
+            return session.get(User.class, id);
+        }
+    }
+
+    public static Admin findAdmin(int id) {
+        try(Session session = getSessionFactory().openSession()) {
+            return session.get(Admin.class, id);
+        }
+    }
 }

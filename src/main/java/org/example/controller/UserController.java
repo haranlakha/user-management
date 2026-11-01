@@ -1,7 +1,11 @@
 package org.example.controller;
 
 import org.example.entity.User;
+import org.example.security.SessionUser;
 import org.example.utility.Utility;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,9 +26,13 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable int id, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(@PathVariable int id, @RequestBody User user, @AuthenticationPrincipal SessionUser sessionUser) {
+
+        if (!sessionUser.isAdmin() && sessionUser.getId() != id) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Utility.updateUser(id, user.getName(), user.getEmail());
-        return user;
+        return ResponseEntity.ok(user);
     }
 
     @DeleteMapping("/{id}")
