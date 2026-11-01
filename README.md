@@ -106,7 +106,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to reach the Library Portal login page:
 
-<img width="495" alt="Library Portal Login screen" src="docs/images/login.png" />
+<img width="464" height="582" alt="image" src="https://github.com/user-attachments/assets/ca349f06-7952-4995-9220-b0216c2ad3fc" />
+
 
 
 ## Visualiser
