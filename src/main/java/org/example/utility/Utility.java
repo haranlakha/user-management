@@ -4,12 +4,15 @@ import org.hibernate.*;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.example.entity.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import java.util.Collections;
 
 
 public class Utility {
     private static final SessionFactory sessionFactory = buildSessionFactory();
+    private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private static SessionFactory buildSessionFactory() {
         try {
@@ -43,11 +46,11 @@ public class Utility {
         Session session = getSessionFactory().openSession();
         try {
             ensureDefaultAdmin(session);
-            return session.createQuery(
-                "FROM Admin WHERE username = :username AND password = :password", Admin.class)
+            Admin admin = session.createQuery(
+                "FROM Admin WHERE username = :username", Admin.class)
                     .setParameter("username", username)
-                    .setParameter("password", password)
                     .uniqueResult();
+            return admin != null && passwordEncoder.matches(password, admin.getPassword()) ? admin : null;
         } catch (Exception e) {
             System.err.println("authenticateAdmin error: " + e.getMessage());
             return null;
@@ -65,16 +68,9 @@ public class Utility {
                 boolean matchesIdentifier = (u.getEmail() != null && u.getEmail().equalsIgnoreCase(emailOrName.trim()))
                         || (u.getName() != null && u.getName().equalsIgnoreCase(emailOrName.trim()));
 
-                if (matchesIdentifier) {
-                    // If user has a password configured, ensure it matches
-                    if (u.getPassword() != null && !u.getPassword().isEmpty()) {
-                        if (password != null && u.getPassword().equals(password)) {
-                            return u;
-                        }
-                    } else {
-                        // User without password (legacy records)
-                        return u;
-                    }
+                if (matchesIdentifier && u.getPassword() != null && password != null
+                        && passwordEncoder.matches(password, u.getPassword())) {
+                    return u;
                 }
             }
             return null;
@@ -92,6 +88,7 @@ public class Utility {
         Transaction transaction = null;
         try {
             transaction = session.beginTransaction();
+            admin.setPassword(passwordEncoder.encode(admin.getPassword()));
             session.persist(admin);
             transaction.commit();
         } catch (Exception e) {
@@ -147,7 +144,7 @@ public class Utility {
                 Transaction tx = session.beginTransaction();
                 Admin defaultAdmin = new Admin();
                 defaultAdmin.setUsername("admin");
-                defaultAdmin.setPassword("admin123");
+                defaultAdmin.setPassword(passwordEncoder.encode("admin123"));
                 session.persist(defaultAdmin);
                 tx.commit();
                 System.out.println(">> Seeded default admin account: username='admin', password='admin123'");
@@ -165,6 +162,10 @@ public class Utility {
 
         try {
             transaction = session.beginTransaction();
+            // Users created through /api/users have no password
+            if (user.getPassword() != null) {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
             session.persist(user);
             transaction.commit();
         } catch (Exception sessionFactoryException) {

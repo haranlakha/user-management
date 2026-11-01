@@ -12,15 +12,17 @@ public class User {
     private int id;
 
     @Convert(converter = EncryptionConverter.class)
+    @Column(length = 512)
     private String name;
 
     @Convert(converter = EncryptionConverter.class)
+    @Column(length = 512)
     private String email;
 
     @Convert(converter = EncryptionConverter.class)
     private int age;
 
-    @Convert(converter = EncryptionConverter.class)
+    // BCrypt hash, set by Utility
     private String password;
 
 

@@ -6,7 +6,8 @@ User Management application for a Library Management System, utilising [Spring B
 
 - Sign in and create accounts from the Library Portal
 - Separate **Standard User** (email) and **Admin** (username) roles
-- Passwords encrypted at rest with AES via a JPA `@Convert` attribute converter
+- Passwords hashed with BCrypt
+- User name, email and age encrypted at rest with AES-256-GCM via a JPA `@Convert` attribute converter
 - REST API under `/api/auth` (`/login`, `/register`) for the frontend
 
 ## Prerequisites
@@ -43,10 +44,11 @@ Example XML file:
 </hibernate-configuration>
 ```
 
-You will also need a postgresql.conf file in the same 'resources' folder, containing the key used to encrypt passwords. It must be exactly 16 characters long (AES-128):
+You will also need a postgresql.conf file in the same 'resources' folder, containing the secret used to encrypt user details. The salt must be hex-encoded (e.g. 16 hex characters):
 
 ```
-encryption.key=your16charactkey
+encryption.password=any-long-secret-phrase
+encryption.salt=5c0744940b5c369b
 ```
 
 Install the frontend dependencies:
