@@ -2,3 +2,6 @@
 # encryption.salt must be hex-encoded, e.g. 16 random hex characters.
 encryption.password=any-long-secret-phrase
 encryption.salt=5c0744940b5c369b
+# Default admin, created on first admin login if no admin exists
+admin.username=admin
+admin.password=change-me

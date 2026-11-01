@@ -16,10 +16,13 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final int MIN_PASSWORD_LENGTH = 8;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         String identifier = request.getUsernameOrEmail() != null ? request.getUsernameOrEmail().trim() : "";
-        String password = request.getPassword() != null ? request.getPassword().trim() : "";
+        // Passwords are used exactly as typed, spaces included
+        String password = request.getPassword() != null ? request.getPassword() : "";
 
         // 1. Try Admin authentication first
         if (!password.isEmpty()) {
@@ -54,44 +57,27 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         Map<String, Object> response = new HashMap<>();
 
-        // Validate password confirmation
-        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+        // Admin accounts can't be self-registered; the default admin comes from postgresql.conf
+        if ("ADMIN".equalsIgnoreCase(request.getRole())) {
             response.put("success", false);
-            response.put("message", "Password cannot be empty.");
+            response.put("message", "Admin accounts cannot be created through registration.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+
+        // Validate password
+        String password = request.getPassword();
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
+            response.put("success", false);
+            response.put("message", "Password must be at least " + MIN_PASSWORD_LENGTH + " characters long.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-        if (!request.getPassword().equals(request.getConfirmPassword())) {
+        if (!password.equals(request.getConfirmPassword())) {
             response.put("success", false);
             response.put("message", "Passwords do not match. Please re-enter.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // 1. Register Admin
-        if ("ADMIN".equalsIgnoreCase(request.getRole())) {
-            String username = request.getUsername() != null ? request.getUsername().trim() : "";
-            if (username.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "Admin username is required.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-            }
-            if (Utility.isAdminUsernameTaken(username)) {
-                response.put("success", false);
-                response.put("message", "Admin username '" + username + "' is already taken.");
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-            }
-
-            Admin newAdmin = new Admin();
-            newAdmin.setUsername(username);
-            newAdmin.setPassword(request.getPassword().trim());
-            Utility.createAdmin(newAdmin);
-
-            response.put("success", true);
-            response.put("role", "ADMIN");
-            response.put("user", Map.of("id", newAdmin.getId(), "username", newAdmin.getUsername()));
-            return ResponseEntity.ok(response);
-        }
-
-        // 2. Register Standard User
+        // Register Standard User
         String email = request.getEmail() != null ? request.getEmail().trim() : "";
         String name = request.getName() != null ? request.getName().trim() : "";
         Integer age = request.getAge();
@@ -111,8 +97,14 @@ public class AuthController {
         newUser.setName(name);
         newUser.setEmail(email);
         newUser.setAge(age);
-        newUser.setPassword(request.getPassword().trim()); // Hashed with BCrypt by Utility.createUser
-        Utility.createUser(newUser);
+        newUser.setPassword(password); // Hashed with BCrypt by Utility.createUser
+        try {
+            Utility.createUser(newUser);
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", "Account could not be saved. Please try again later.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
 
         response.put("success", true);
         response.put("role", "USER");

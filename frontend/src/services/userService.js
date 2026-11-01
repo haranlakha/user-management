@@ -1,4 +1,4 @@
-// Service to communicate with the Java backend (or fallback to local mock mode)
+// Service to communicate with the Java backend (or local mock mode when switched on)
 
 const API_BASE_URL = '/api/users';
 
@@ -26,19 +26,27 @@ function saveStoredMockUsers(users) {
   localStorage.setItem('mock_users', JSON.stringify(users));
 }
 
+// Calls the backend; never falls back to mock data (mock mode is opt-in via the toggle)
+async function request(url, options) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch {
+    throw new Error("Can't reach the server. Check that the backend is running.");
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok || data?.success === false) {
+    throw new Error(data?.message || `Server error (${response.status})`);
+  }
+  return data;
+}
+
 export const userService = {
   async getAllUsers(useMock = false) {
     if (useMock) {
       return getStoredMockUsers();
     }
-    try {
-      const response = await fetch(API_BASE_URL);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      console.warn('Backend unavailable or mock selected, falling back to local storage:', err.message);
-      return getStoredMockUsers();
-    }
+    return request(API_BASE_URL);
   },
 
   async createUser(userData, useMock = false) {
@@ -54,22 +62,15 @@ export const userService = {
       return newUser;
     }
 
-    try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          age: Number(userData.age),
-        }),
-      });
-      if (!response.ok) throw new Error(`Server returned ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      console.warn('Backend request failed, falling back to mock save:', err.message);
-      return this.createUser(userData, true);
-    }
+    return request(API_BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: userData.name,
+        email: userData.email,
+        age: Number(userData.age),
+      }),
+    });
   },
 
   async updateUser(id, userData, useMock = false) {
@@ -84,22 +85,15 @@ export const userService = {
       return updated.find((u) => u.id === id);
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          age: Number(userData.age),
-        }),
-      });
-      if (!response.ok) throw new Error(`Server returned ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      console.warn('Backend request failed, updating mock:', err.message);
-      return this.updateUser(id, userData, true);
-    }
+    return request(`${API_BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: userData.name,
+        email: userData.email,
+        age: Number(userData.age),
+      }),
+    });
   },
 
   async deleteUser(id, useMock = false) {
@@ -110,22 +104,14 @@ export const userService = {
       return true;
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error(`Server returned ${response.status}`);
-      return true;
-    } catch (err) {
-      console.warn('Backend request failed, deleting from mock:', err.message);
-      return this.deleteUser(id, true);
-    }
+    await request(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+    return true;
   },
 
   async login(usernameOrEmail, password, roleHint = 'ADMIN', useMock = false) {
     if (useMock) {
       if (roleHint === 'ADMIN' || usernameOrEmail.toLowerCase() === 'admin') {
-        if (password === 'admin123' || !password) {
+        if (password === 'admin123') {
           return { success: true, role: 'ADMIN', user: { id: 1, username: 'admin' } };
         }
         throw new Error('Invalid Admin password. Use "admin123".');
@@ -143,24 +129,11 @@ export const userService = {
       throw new Error(`No user found matching "${usernameOrEmail}". Try "alice.johnson@example.com".`);
     }
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usernameOrEmail, password }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Login failed');
-      }
-      return data;
-    } catch (err) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch')) {
-        throw err; // Real backend validation error
-      }
-      console.warn('Backend /api/auth/login unreachable, trying mock login:', err.message);
-      return this.login(usernameOrEmail, password, roleHint, true);
-    }
+    return request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameOrEmail, password }),
+    });
   },
 
   async register(registerData, useMock = false) {
@@ -170,11 +143,7 @@ export const userService = {
       }
 
       if (registerData.role === 'ADMIN') {
-        return {
-          success: true,
-          role: 'ADMIN',
-          user: { id: Date.now(), username: registerData.username },
-        };
+        throw new Error('Admin accounts cannot be created through registration.');
       }
 
       // Standard user mock registration
@@ -188,29 +157,15 @@ export const userService = {
         name: registerData.name,
         email: registerData.email,
         age: Number(registerData.age),
-        password: registerData.password,
       };
       saveStoredMockUsers([...users, newUser]);
       return { success: true, role: 'USER', user: newUser };
     }
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerData),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Registration failed');
-      }
-      return data;
-    } catch (err) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch')) {
-        throw err; // Real backend error from Spring Boot (e.g., username taken, duplicate email)
-      }
-      console.warn('Backend unavailable, falling back to mock registration:', err.message);
-      return this.register(registerData, true);
-    }
+    return request('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registerData),
+    });
   },
 };
