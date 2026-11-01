@@ -1,0 +1,4 @@
+# Copy to postgresql.conf and set your own values. postgresql.conf is git-ignored.
+# encryption.salt must be hex-encoded, e.g. 16 random hex characters.
+encryption.password=any-long-secret-phrase
+encryption.salt=5c0744940b5c369b
