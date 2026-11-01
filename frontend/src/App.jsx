@@ -142,7 +142,7 @@ export default function App() {
                         </div>
                         <div>
                             <div className="brand-title">SecureUser DB (Admin)</div>
-                            <div className="brand-subtitle">Hibernate JPA Entity Manager with AES-128 Column
+                            <div className="brand-subtitle">Hibernate JPA Entity Manager with AES-256-GCM Column
                                 Encryption
                             </div>
                         </div>

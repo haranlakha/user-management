@@ -28,6 +28,8 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
 
     const handleToggleMode = (register) => {
         setIsRegisterMode(register);
+        // Only standard users can register; admins come from server config
+        if (register) setRoleTab('USER');
         resetForm();
     };
 
@@ -41,8 +43,8 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                 setError('Password is required');
                 return;
             }
-            if (password.length < 4) {
-                setError('Password must be at least 4 characters long');
+            if (password.length < 8) {
+                setError('Password must be at least 8 characters long');
                 return;
             }
             if (password !== confirmPassword) {
@@ -50,28 +52,20 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                 return;
             }
 
-            if (roleTab === 'ADMIN') {
-                if (!username.trim()) {
-                    setError('Admin username is required');
-                    return;
-                }
-            } else {
-                if (!name.trim() || !email.trim() || !age) {
-                    setError('Name, Email, and Age are all required');
-                    return;
-                }
+            if (!name.trim() || !email.trim() || !age) {
+                setError('Name, Email, and Age are all required');
+                return;
             }
 
             setLoading(true);
             try {
                 await onRegister({
-                    role: roleTab,
-                    username: username.trim(),
+                    role: 'USER',
                     name: name.trim(),
                     email: email.trim(),
                     age: Number(age),
-                    password: password.trim(),
-                    confirmPassword: confirmPassword.trim(),
+                    password,
+                    confirmPassword,
                 });
             } catch (err) {
                 setError(err.message || 'Registration failed');
@@ -87,7 +81,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
             setError(roleTab === 'ADMIN' ? 'Please enter your admin username' : 'Please enter your email');
             return;
         }
-        if (!password.trim()) {
+        if (!password) {
             setError('Please enter your password');
             return;
         }
@@ -96,7 +90,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
         try {
             await onLogin({
                 usernameOrEmail: identifier,
-                password: password.trim(),
+                password,
                 roleHint: roleTab,
             });
         } catch (err) {
@@ -144,31 +138,33 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
                     </button>
                 </div>
 
-                {/* Role Selector Tabs */}
-                <div className="role-tabs">
-                    <button
-                        type="button"
-                        className={`role-tab ${roleTab === 'USER' ? 'active' : ''}`}
-                        onClick={() => {
-                            setRoleTab('USER');
-                            setError('');
-                        }}
-                    >
-                        <User size={16}/>
-                        <span>Standard User</span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`role-tab ${roleTab === 'ADMIN' ? 'active' : ''}`}
-                        onClick={() => {
-                            setRoleTab('ADMIN');
-                            setError('');
-                        }}
-                    >
-                        <KeyRound size={16}/>
-                        <span>Admin</span>
-                    </button>
-                </div>
+                {/* Role Selector Tabs (sign in only) */}
+                {!isRegisterMode && (
+                    <div className="role-tabs">
+                        <button
+                            type="button"
+                            className={`role-tab ${roleTab === 'USER' ? 'active' : ''}`}
+                            onClick={() => {
+                                setRoleTab('USER');
+                                setError('');
+                            }}
+                        >
+                            <User size={16}/>
+                            <span>Standard User</span>
+                        </button>
+                        <button
+                            type="button"
+                            className={`role-tab ${roleTab === 'ADMIN' ? 'active' : ''}`}
+                            onClick={() => {
+                                setRoleTab('ADMIN');
+                                setError('');
+                            }}
+                        >
+                            <KeyRound size={16}/>
+                            <span>Admin</span>
+                        </button>
+                    </div>
+                )}
 
                 {error && (
                     <div className="login-error-banner">
@@ -314,7 +310,7 @@ export default function LoginScreen({onLogin, onRegister, useMock}) {
               {loading
                   ? 'Processing...'
                   : isRegisterMode
-                      ? `Create ${roleTab === 'ADMIN' ? 'Admin' : 'User'} Account`
+                      ? 'Create Account'
                       : `Sign In as ${roleTab === 'ADMIN' ? 'Admin' : 'User'}`}
             </span>
                         <ArrowRight size={16}/>

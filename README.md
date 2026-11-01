@@ -53,12 +53,16 @@ Example XML file:
 </hibernate-configuration>
 ```
 
-The postgresql.conf file contains the secret used to encrypt user details. Use your own random values; the salt must be hex-encoded (e.g. 16 hex characters):
+The postgresql.conf file contains the secret used to encrypt user details, and the default admin account. Use your own random values; the salt must be hex-encoded (e.g. 16 hex characters):
 
 ```
 encryption.password=any-long-secret-phrase
 encryption.salt=5c0744940b5c369b
+admin.username=admin
+admin.password=change-me
 ```
+
+The admin account is created on the first admin login if no admin exists yet. Admin accounts can't be created through registration.
 
 Install the frontend dependencies:
 
