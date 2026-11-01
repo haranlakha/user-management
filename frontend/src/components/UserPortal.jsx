@@ -173,14 +173,15 @@ export default function UserPortal({user, onLogout, onUpdateSelf}) {
                             <div className="security-status-badge">
                                 <ShieldCheck size={28} className="shield-green"/>
                                 <div>
-                                    <strong>End-to-End Database Encryption</strong>
-                                    <p>AES-128 Column Level Protection</p>
+                                    <strong>Database Encryption at Rest</strong>
+                                    <p>AES-256-GCM Column Level Protection</p>
                                 </div>
                             </div>
                             <ul className="security-checklist">
                                 <li>Your name, email, and age are encrypted before being saved into PostgreSQL.</li>
+                                <li>Your password is stored as a one-way BCrypt hash and can't be decrypted.</li>
                                 <li>Database administrators querying raw tables only see AES cipher text.</li>
-                                <li>Your private encryption key is loaded securely from <code>postgres.conf</code>.</li>
+                                <li>The server's encryption key is kept in <code>postgresql.conf</code>, outside the database.</li>
                             </ul>
                         </div>
                     </div>
