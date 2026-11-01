@@ -111,7 +111,7 @@ public class AuthController {
         newUser.setName(name);
         newUser.setEmail(email);
         newUser.setAge(age);
-        newUser.setPassword(request.getPassword().trim()); // Encrypted transparently by @Convert
+        newUser.setPassword(request.getPassword().trim()); // Hashed with BCrypt by Utility.createUser
         Utility.createUser(newUser);
 
         response.put("success", true);

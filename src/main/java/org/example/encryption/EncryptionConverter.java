@@ -2,20 +2,18 @@ package org.example.encryption;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.Key;
-import java.util.Base64;
 import java.util.Properties;
 
 @Converter
 public class EncryptionConverter implements AttributeConverter<Object, String> {
 
-    private static final String ALGORITHM = "AES";
-    private static final byte[] KEY;
+    // AES-256-GCM with a random IV per value
+    private static final TextEncryptor ENCRYPTOR;
 
     static {
         Properties properties = new Properties();
@@ -24,12 +22,13 @@ public class EncryptionConverter implements AttributeConverter<Object, String> {
                 throw new RuntimeException("Unable to find postgresql.conf in the classpath");
             }
             properties.load(input);
-            String secretKey = properties.getProperty("encryption.key");
+            String password = properties.getProperty("encryption.password");
+            String salt = properties.getProperty("encryption.salt");
 
-            if (secretKey == null || secretKey.length() != 16) {
-                throw new RuntimeException("encryption.key must be defined in postgres.conf and exactly 16 characters long for AES-128");
+            if (password == null || password.isBlank() || salt == null || !salt.matches("[0-9a-fA-F]+") || salt.length() % 2 != 0) {
+                throw new RuntimeException("encryption.password and a hex encryption.salt must be defined in postgresql.conf");
             }
-            KEY = secretKey.getBytes();
+            ENCRYPTOR = Encryptors.delux(password, salt);
         } catch (IOException e) {
             throw new ExceptionInInitializerError("Failed to load encryption key: " + e.getMessage());
         }
@@ -40,18 +39,8 @@ public class EncryptionConverter implements AttributeConverter<Object, String> {
         if (attribute == null) {
             return null;
         }
-        try {
-            Key key = new SecretKeySpec(KEY, ALGORITHM);
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-
-            String typePrefix = attribute.getClass().getSimpleName() + ":";
-            String payload = typePrefix + attribute;
-
-            return Base64.getEncoder().encodeToString(cipher.doFinal(payload.getBytes()));
-        } catch (Exception e) {
-            throw new RuntimeException("Error encrypting data", e);
-        }
+        String typePrefix = attribute.getClass().getSimpleName() + ":";
+        return ENCRYPTOR.encrypt(typePrefix + attribute);
     }
 
     @Override
@@ -59,30 +48,21 @@ public class EncryptionConverter implements AttributeConverter<Object, String> {
         if (dbData == null) {
             return null;
         }
-        try {
-            Key key = new SecretKeySpec(KEY, ALGORITHM);
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, key);
+        String decrypted = ENCRYPTOR.decrypt(dbData);
 
-            String decrypted = new String(cipher.doFinal(Base64.getDecoder().decode(dbData)));
+        int splitIndex = decrypted.indexOf(':');
 
-            int splitIndex = decrypted.indexOf(':');
-
-            if (splitIndex == -1) {
-                return decrypted;
-            }
-
-            String type = decrypted.substring(0, splitIndex);
-            String value = decrypted.substring(splitIndex + 1);
-
-            if ("Integer".equals(type)) {
-                return Integer.valueOf(value);
-            }
-
-            return value;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error decrypting data", e);
+        if (splitIndex == -1) {
+            return decrypted;
         }
+
+        String type = decrypted.substring(0, splitIndex);
+        String value = decrypted.substring(splitIndex + 1);
+
+        if ("Integer".equals(type)) {
+            return Integer.valueOf(value);
+        }
+
+        return value;
     }
 }
