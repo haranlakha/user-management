@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Shield, Lock, Mail, User, KeyRound, AlertCircle, ArrowRight, UserPlus, Check, X} from 'lucide-react';
 
-export default function LoginScreen({onLogin, onRegister, useMock}) {
+export default function LoginScreen({onLogin, onRegister}) {
     const [isRegisterMode, setIsRegisterMode] = useState(false);
     const [roleTab, setRoleTab] = useState('USER'); // 'USER' or 'ADMIN'
 
