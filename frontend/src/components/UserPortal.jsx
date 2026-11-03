@@ -41,14 +41,15 @@ export default function UserPortal({user, onLogout, onUpdateSelf}) {
                             <User size={22}/>
                         </div>
                         <div>
-                            <div className="brand-title">User Account Portal</div>
+                            <div className="brand-title">{user.name}</div>
                             <div className="brand-subtitle">Standard Member View</div>
                         </div>
                     </div>
 
                     <div className="header-actions">
                         <div className="user-pill-tag">
-                            <span>Standard User</span>
+                            <ShieldCheck size={14}/>
+                            <span>Secure</span>
                         </div>
                         <button className="btn-secondary btn-logout" onClick={onLogout}>
                             <LogOut size={16}/>

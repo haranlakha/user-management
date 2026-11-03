@@ -1,7 +1,7 @@
 import React from 'react';
 import {Users, Calendar, ShieldCheck, Database} from 'lucide-react';
 
-export default function StatsCards({users, useMock, onToggleMock}) {
+export default function StatsCards({users}) {
     const totalUsers = users.length;
     const avgAge =
         totalUsers > 0
@@ -22,17 +22,6 @@ export default function StatsCards({users, useMock, onToggleMock}) {
             </div>
 
             <div className="stat-card">
-                <div className="stat-icon-wrapper amber">
-                    <Calendar size={22}/>
-                </div>
-                <div className="stat-content">
-                    <div className="stat-label">Average Age</div>
-                    <div className="stat-value">{avgAge > 0 ? `${avgAge} yrs` : 'N/A'}</div>
-                    <div className="stat-hint">Calculated across userbase</div>
-                </div>
-            </div>
-
-            <div className="stat-card">
                 <div className="stat-icon-wrapper green">
                     <ShieldCheck size={22}/>
                 </div>
@@ -40,30 +29,6 @@ export default function StatsCards({users, useMock, onToggleMock}) {
                     <div className="stat-label">DB Encryption</div>
                     <div className="stat-value">AES-256-GCM</div>
                     <div className="stat-hint">Key loaded from postgresql.conf</div>
-                </div>
-            </div>
-
-            <div className="stat-card">
-                <div className="stat-icon-wrapper purple">
-                    <Database size={22}/>
-                </div>
-                <div className="stat-content">
-                    <div className="stat-label">Data Source</div>
-                    <div className="stat-toggle-row">
-            <span className={`status-pill ${useMock ? 'pill-mock' : 'pill-live'}`}>
-              {useMock ? 'Local Demo Mode' : 'Live /api/users'}
-            </span>
-                        <button
-                            className="btn-toggle-mode"
-                            onClick={onToggleMock}
-                            title="Toggle between mock data and real backend API"
-                        >
-                            Switch to {useMock ? 'Live' : 'Mock'}
-                        </button>
-                    </div>
-                    <div className="stat-hint">
-                        {useMock ? 'Testing without backend running' : 'Connecting to Spring/Hibernate server'}
-                    </div>
                 </div>
             </div>
         </div>

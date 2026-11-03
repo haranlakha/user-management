@@ -21,7 +21,6 @@ export default function App() {
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [useMock, setUseMock] = useState(false); // Default to live PostgreSQL database
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
@@ -33,13 +32,13 @@ export default function App() {
     };
 
     const handleLogin = async ({usernameOrEmail, password, roleHint}) => {
-        const result = await userService.login(usernameOrEmail, password, roleHint, useMock);
+        const result = await userService.login(usernameOrEmail, password, roleHint);
         setAuth(result);
         showToast(`Welcome! Logged in as ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`);
     };
 
     const handleRegister = async (registerData) => {
-        const result = await userService.register(registerData, useMock);
+        const result = await userService.register(registerData);
         setAuth(result);
         showToast(
             `Account created! Welcome, ${result.role === 'ADMIN' ? 'Administrator' : result.user.name}`
@@ -56,7 +55,7 @@ export default function App() {
         if (!auth || auth.role !== 'ADMIN') return;
         setLoading(true);
         try {
-            const data = await userService.getAllUsers(useMock);
+            const data = await userService.getAllUsers();
             setUsers(data || []);
         } catch (err) {
             showToast('Error loading users: ' + err.message, 'error');
@@ -70,24 +69,15 @@ export default function App() {
             loadUsers().then(() => {
             });
         }
-    }, [auth, useMock]);
-
-    const handleToggleMock = () => {
-        const nextMock = !useMock;
-        setUseMock(nextMock);
-        showToast(
-            nextMock ? 'Switched to Local Demo Mode' : 'Switched to Live Backend Mode (/api/users)',
-            'info'
-        );
-    };
+    }, [auth]);
 
     const handleModalSubmit = async (formData) => {
         try {
             if (editingUser) {
-                await userService.updateUser(editingUser.id, formData, useMock);
+                await userService.updateUser(editingUser.id, formData);
                 showToast(`User "${formData.name}" updated successfully!`);
             } else {
-                await userService.createUser(formData, useMock);
+                await userService.createUser(formData);
                 showToast(`User "${formData.name}" created and encrypted in DB!`);
             }
             setIsModalOpen(false);
@@ -100,7 +90,7 @@ export default function App() {
 
     const handleConfirmDelete = async (id) => {
         try {
-            await userService.deleteUser(id, useMock);
+            await userService.deleteUser(id);
             showToast('Deleted user');
             setDeletingUser(null);
             await loadUsers();
@@ -110,7 +100,7 @@ export default function App() {
     };
 
     const handleUpdateSelf = async (updatedUser) => {
-        await userService.updateUser(updatedUser.id, updatedUser, useMock);
+        await userService.updateUser(updatedUser.id, updatedUser);
         const newAuth = {...auth, user: updatedUser};
         setAuth(newAuth);
     };
@@ -121,7 +111,7 @@ export default function App() {
 
     // 1. Not Logged In -> Show Login Screen
     if (!auth) {
-        return <LoginScreen onLogin={handleLogin} onRegister={handleRegister} useMock={useMock}/>;
+        return <LoginScreen onLogin={handleLogin} onRegister={handleRegister}/>;
     }
 
     // 2. Standard User -> Show New User Portal Page
@@ -186,7 +176,7 @@ export default function App() {
             {/* Existing Admin Dashboard Content */}
             <main className="main-content">
                 <div className="content-container">
-                    <StatsCards users={users} useMock={useMock} onToggleMock={handleToggleMock}/>
+                    <StatsCards users={users}/>
                     <UserTable
                         users={users}
                         onEdit={(user) => {
