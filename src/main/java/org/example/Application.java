@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 
-// Exclude default DataSource autoconfiguration since Utility uses its own hibernate.cfg.xml
+// Exclude default DataSource autoconfiguration since UserUtility uses its own hibernate.cfg.xml
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 public class Application {
     public static void main(String[] args) {

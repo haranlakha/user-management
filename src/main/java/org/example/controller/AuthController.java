@@ -8,8 +8,7 @@ import org.example.dto.RegisterRequest;
 import org.example.entity.Admin;
 import org.example.entity.User;
 import org.example.security.SessionUser;
-import org.example.utility.Utility;
-
+import org.example.utility.UserUtility;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,7 +45,7 @@ public class AuthController {
 
         // 1. Try Admin authentication first
         if (!password.isEmpty()) {
-            Admin admin = Utility.authenticateAdmin(identifier, password);
+            Admin admin = UserUtility.authenticateAdmin(identifier, password);
             if (admin != null) {
 
                 startSession(new SessionUser(admin.getId(), "ADMIN"), httpServletRequest, httpServletResponse);
@@ -59,7 +58,7 @@ public class AuthController {
         }
 
         // 2. Try Standard User authentication with password
-        User user = Utility.authenticateUser(identifier, password);
+        User user = UserUtility.authenticateUser(identifier, password);
         if (user != null) {
             startSession(new SessionUser(user.getId(), "USER"), httpServletRequest, httpServletResponse);
             Map<String, Object> response = new HashMap<>();
@@ -111,7 +110,7 @@ public class AuthController {
             response.put("message", "Full Name, Email, and Age are required for user registration.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-        if (Utility.isUserEmailTaken(email)) {
+        if (UserUtility.isUserEmailTaken(email)) {
             response.put("success", false);
             response.put("message", "An account with email '" + email + "' already exists.");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
@@ -121,9 +120,9 @@ public class AuthController {
         newUser.setName(name);
         newUser.setEmail(email);
         newUser.setAge(age);
-        newUser.setPassword(password); // Hashed with BCrypt by Utility.createUser
+        newUser.setPassword(password); // Hashed with BCrypt by UserUtility.createUser
         try {
-            Utility.createUser(newUser);
+            UserUtility.createUser(newUser);
         } catch (RuntimeException e) {
             response.put("success", false);
             response.put("message", "Account could not be saved. Please try again later.");
@@ -150,10 +149,10 @@ public class AuthController {
         response.put("role", sessionUser.getRole());
 
         if (sessionUser.isAdmin()) {
-            Admin admin = Utility.findAdmin(sessionUser.getId());
+            Admin admin = UserUtility.findAdmin(sessionUser.getId());
             response.put("user", Map.of("id", admin.getId(), "username", admin.getUsername()));
         } else {
-            response.put("user", Utility.findUser(sessionUser.getId()));
+            response.put("user", UserUtility.findUser(sessionUser.getId()));
         }
 
         return ResponseEntity.ok(response);
