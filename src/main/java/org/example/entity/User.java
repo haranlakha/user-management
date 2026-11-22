@@ -23,7 +23,7 @@ public class User {
     @Convert(converter = EncryptionConverter.class)
     private int age;
 
-    // BCrypt hash, set by Utility
+    // BCrypt hash, set by UserUtility
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 

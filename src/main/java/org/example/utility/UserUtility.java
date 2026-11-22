@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 
-public class Utility {
+public class UserUtility {
     private static final SessionFactory sessionFactory = buildSessionFactory();
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -166,7 +166,7 @@ public class Utility {
     // Reads postgresql.conf from the classpath
     private static Properties loadConfig() {
         Properties properties = new Properties();
-        try (InputStream input = Utility.class.getClassLoader().getResourceAsStream("postgresql.conf")) {
+        try (InputStream input = UserUtility.class.getClassLoader().getResourceAsStream("postgresql.conf")) {
             if (input != null) {
                 properties.load(input);
             }
